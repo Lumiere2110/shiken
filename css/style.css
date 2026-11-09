@@ -102,7 +102,7 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
 .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .btn.danger { border-color: var(--ng); color: var(--ng); }
 .btn.big { padding: 12px 28px; font-size: 1.05rem; margin-top: 12px; }
-.btn.flag { margin-left: auto; padding: 4px 12px; font-size: .85rem; }
+.btn.flag { padding: 4px 12px; font-size: .85rem; }
 .btn.flag.on { background: var(--flag-weak); border-color: var(--flag); color: var(--flag); }
 
 /* start */
@@ -204,4 +204,39 @@ b.ng { color: var(--ng); }
   .grid { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
   .qpane, .panel, .review, .result, .start { padding: 16px; }
   .cats .bar { display: none; }
+}
+
+/* 復習ノート */
+.note-link { color: var(--text); text-decoration: none; font-size: .9rem; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
+.note-link:hover { border-color: var(--primary); }
+.note-link b { color: var(--primary); }
+body.in-exam .note-link { display: none; }
+.qhead-btns { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.btn.note { padding: 4px 12px; font-size: .85rem; }
+.btn.note.on { background: var(--primary-weak); border-color: var(--primary); color: var(--primary); }
+.btn.danger-outline { border-color: var(--ng); color: var(--ng); padding: 4px 12px; font-size: .85rem; }
+.tag.src { background: var(--bg); color: var(--muted); }
+p.src { color: var(--muted); font-size: .85rem; margin: 8px 0 0; }
+.notice { background: var(--primary-weak); padding: 8px 12px; border-radius: 8px; }
+.notebook { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 24px; }
+.notebook h1 small { font-size: .9rem; color: var(--muted); font-weight: 400; }
+.note-filters, .note-start { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-bottom: 12px; }
+.note-start { padding: 12px 14px; background: var(--bg); border-radius: 8px; margin-bottom: 16px; }
+.note-filters select { font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--text); max-width: 100%; }
+.badges { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-left: 8px; vertical-align: middle; }
+.badge { font-size: .7rem; padding: 1px 7px; border-radius: 999px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.badge.ng { color: var(--ng); border-color: var(--ng); background: var(--ng-weak); }
+.badge.ok { color: var(--ok); border-color: var(--ok); background: var(--ok-weak); }
+.memo { display: block; margin-top: 10px; font-size: .85rem; color: var(--muted); }
+.memo textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.ans-tools { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.note-foot { text-align: right; margin-top: 16px; }
+.expl { margin-top: 10px; border-left: 3px solid var(--primary); }
+.expl.none { border-left-color: var(--line); color: var(--muted); }
+.expl-choices { list-style: none; padding: 0; margin: 6px 0 0; }
+.expl-choices li { padding: 2px 0; }
+.feedback + .expl { margin-top: 8px; }
+@media (max-width: 760px) {
+  .notebook { padding: 16px; }
+  .note-link { font-size: .8rem; padding: 3px 8px; }
 }
