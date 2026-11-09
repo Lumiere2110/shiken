@@ -125,6 +125,13 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
 .tag.multi { background: var(--flag-weak); color: var(--flag); }
 .qtext { font-size: 1.05rem; margin-bottom: 14px; }
 .code { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-family: Consolas, "Courier New", monospace; font-size: .92rem; }
+.qtable-wrap { overflow-x: auto; margin-bottom: 14px; }
+.qtable { border-collapse: collapse; font-size: .95rem; }
+.qtable caption { text-align: left; font-weight: 700; padding: 0 0 4px; }
+.qtable th, .qtable td { border: 1px solid var(--line); padding: 5px 12px; text-align: left; }
+.qtable th { background: var(--bg); font-weight: 600; }
+.qtable .pk { text-decoration: underline; text-underline-offset: 3px; }
+.qtable .fk { text-decoration: underline dashed; text-underline-offset: 3px; }
 .qimg { max-width: 100%; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 14px; }
 .choices { display: flex; flex-direction: column; gap: 8px; }
 .choice {

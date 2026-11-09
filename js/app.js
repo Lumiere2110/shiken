@@ -57,6 +57,29 @@
     const mm = String(m).padStart(2, "0"), ss = String(s).padStart(2, "0");
     return h > 0 ? h + ":" + mm + ":" + ss : mm + ":" + ss;
   }
+  // 表: table = 行の配列（1行目は見出し）、tables = [{ caption, rows }]
+  // セル先頭の "_" は実線下線（主キー）、"~" は破線下線（外部キー）
+  function cellHtml(c, tag) {
+    c = String(c == null ? "" : c);
+    let inner;
+    if (c[0] === "_") inner = '<span class="pk">' + esc(c.slice(1)) + "</span>";
+    else if (c[0] === "~") inner = '<span class="fk">' + esc(c.slice(1)) + "</span>";
+    else inner = nl2br(c);
+    return "<" + tag + ">" + inner + "</" + tag + ">";
+  }
+  function tableHtml(rows, caption) {
+    if (!rows || !rows.length) return "";
+    return '<div class="qtable-wrap"><table class="qtable">' + (caption ? "<caption>" + esc(caption) + "</caption>" : "") +
+      rows.map(function (r, i) {
+        return "<tr>" + r.map(function (c) { return cellHtml(c, i === 0 ? "th" : "td"); }).join("") + "</tr>";
+      }).join("") + "</table></div>";
+  }
+  function figuresHtml(q) {
+    return (q.code ? '<pre class="code">' + esc(q.code) + "</pre>" : "") +
+      tableHtml(q.table) +
+      (q.tables || []).map(function (t) { return tableHtml(t.rows, t.caption); }).join("") +
+      (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="問題の図">' : "");
+  }
   function answerSet(q) { return Array.isArray(q.answer) ? q.answer.slice().sort() : [q.answer]; }
   function sameSet(a, b) {
     if (a.length !== b.length) return false;
@@ -251,8 +274,7 @@
       (multi ? '<span class="tag multi">複数選択</span>' : "") +
       '<button class="btn flag' + (s.flags[i] ? " on" : "") + '" id="flagBtn">' + (s.flags[i] ? "★ 見直し中" : "☆ 後で見直す") + "</button></div>" +
       '<div class="qtext">' + nl2br(q.text) + "</div>" +
-      (q.code ? "<pre class=\"code\">" + esc(q.code) + "</pre>" : "") +
-      (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="問題の図">' : "") +
+      figuresHtml(q) +
       '<div class="choices">' + choicesHtml + "</div>" +
       feedback +
       '<div class="qnav">' +
@@ -373,8 +395,7 @@
         return '<details class="ans ' + (r.ok ? "ok" : "ng") + '"' + (r.ok ? "" : " open") + ">" +
           "<summary><span class=\"mark\">" + (r.ok ? "○" : "×") + "</span> 問" + (k + 1) + "　" + esc(q.text.split("\n")[0].slice(0, 60)) + "</summary>" +
           '<div class="qtext">' + nl2br(q.text) + "</div>" +
-          (q.code ? '<pre class="code">' + esc(q.code) + "</pre>" : "") +
-          (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="問題の図">' : "") +
+          figuresHtml(q) +
           '<ul class="ans-choices">' + order.map(function (orig, i) {
             const isC = answerSet(q).indexOf(orig) >= 0, isS = r.sel.indexOf(orig) >= 0;
             return '<li class="' + (isC ? "correct" : isS ? "wrong" : "") + '"><b>' + LABELS[i] + "</b> " + nl2br(q.choices[orig]) +
