@@ -41,6 +41,7 @@ window.EXAM_CATALOG = [
         years: [
           { id: "r07a", label: "令和7年度 秋期 午前", file: "data/it/ap/r07a.js" },
           { id: "r07h", label: "令和7年度 春期 午前", file: "data/it/ap/r07h.js" },
+          { id: "r07a-pm", label: "令和7年度 秋期 午後（記述式・AI採点）", file: "data/it/ap/r07a_pm.js" },
           { id: "sample-1", label: "サンプル 第1回", file: "data/it/ap/sample-1.js" }
         ]
       }

@@ -205,6 +205,36 @@ b.ng { color: var(--ng); }
 .expl { background: var(--bg); border-radius: 8px; padding: 8px 12px; }
 .expl p { margin: 4px 0 0; }
 
+/* settings link */
+.settings-link { font-size: .85rem; padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; text-decoration: none; color: var(--text); white-space: nowrap; }
+.settings-link:hover { border-color: var(--primary); }
+
+/* essay (記述式) */
+.ai-status { padding: 8px 12px; border-radius: 8px; background: var(--bg); }
+.ai-status.ok { background: var(--ok-weak); }
+.ai-status.ng { background: var(--flag-weak); }
+.essay-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.essay h3 { font-size: 1rem; margin: 18px 0 6px; }
+.essay-text { line-height: 1.9; }
+.essay .ul { text-decoration: underline; text-underline-offset: 3px; }
+.essay figure { margin: 14px 0; }
+.essay figcaption { font-size: .85rem; color: var(--muted); text-align: center; }
+.essay-part { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 12px 0; }
+.ep-head { display: flex; justify-content: space-between; }
+.ep-head small { color: var(--muted); }
+.essay-choices { display: grid; gap: 6px; }
+.echoice { display: block; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.echoice input { margin-right: 6px; }
+.echoice.chosen { border-color: var(--primary); background: var(--primary-weak); }
+.essay-input { width: 100%; font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--text); resize: vertical; }
+.cc { text-align: right; font-size: .8rem; color: var(--muted); }
+.cc.over { color: var(--ng); font-weight: 700; }
+.grade-progress li { margin: 4px 0; }
+.ans.part .mark { color: var(--flag); }
+.note { font-size: .85rem; color: var(--muted); }
+.keylabel { display: block; margin: 12px 0; }
+.keylabel input { display: block; width: 100%; max-width: 480px; font: inherit; padding: 8px 10px; margin-top: 4px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); }
+
 @media (max-width: 760px) {
   .cbt { grid-template-columns: 1fr; }
   .panel { position: static; }

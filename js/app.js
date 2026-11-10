@@ -160,6 +160,7 @@
     topbarRight.innerHTML = "";
     app.innerHTML = steps(3) + '<p class="loading">読み込み中…</p>';
     loadExamFile(y.file).then(function (data) {
+      if (data.format === "essay") return window.EssayMode.renderStart(essayCtx(), g, e, y, data);
       const n = data.questions.length;
       app.innerHTML = steps(3) +
         breadcrumb([{ label: "ジャンル", href: "#/" }, { label: g.name, href: "#/" + g.id }, { label: e.name, href: "#/" + g.id + "/" + e.id }, { label: y.label }]) +
@@ -420,7 +421,16 @@
   }
 
   // ---------- ルーティング ----------
+  function essayCtx() {
+    return { app: app, topbarRight: topbarRight, steps: steps, breadcrumb: breadcrumb };
+  }
+
   function route() {
+    if (window.EssayMode && window.EssayMode.isActive()) {
+      if (!confirm("受験を中断しますか？（解答は破棄されます）")) { history.replaceState(null, "", window.EssayMode.hash()); return; }
+      window.EssayMode.leave();
+    }
+    if (location.hash === "#/settings") { window.scrollTo(0, 0); return window.EssayMode.renderSettings(essayCtx()); }
     if (session) {
       // 受験中に戻る操作をされた場合
       if (!confirm("受験を中断しますか？（解答は破棄されます）")) {
