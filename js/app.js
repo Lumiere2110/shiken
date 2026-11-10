@@ -78,7 +78,9 @@
     return (q.code ? '<pre class="code">' + esc(q.code) + "</pre>" : "") +
       tableHtml(q.table) +
       (q.tables || []).map(function (t) { return tableHtml(t.rows, t.caption); }).join("") +
-      (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="問題の図">' : "");
+      (q.image ? [q.image] : []).concat(q.images || []).map(function (src) {
+        return '<img class="qimg" src="' + esc(src) + '" alt="問題の図">';
+      }).join("");
   }
   function answerSet(q) { return Array.isArray(q.answer) ? q.answer.slice().sort() : [q.answer]; }
   function sameSet(a, b) {

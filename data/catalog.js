@@ -34,6 +34,7 @@ window.EXAM_CATALOG = [
         name: "応用情報技術者試験",
         description: "ワンランク上のITエンジニア向け国家試験（午前形式）",
         years: [
+          { id: "r07a", label: "令和7年度 秋期 午前", file: "data/it/ap/r07a.js" },
           { id: "sample-1", label: "サンプル 第1回", file: "data/it/ap/sample-1.js" }
         ]
       }

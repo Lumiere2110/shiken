@@ -132,7 +132,7 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
 .qtable th { background: var(--bg); font-weight: 600; }
 .qtable .pk { text-decoration: underline; text-underline-offset: 3px; }
 .qtable .fk { text-decoration: underline dashed; text-underline-offset: 3px; }
-.qimg { max-width: 100%; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 14px; }
+.qimg { display: block; background: #fff; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 14px; }
 .choices { display: flex; flex-direction: column; gap: 8px; }
 .choice {
   font: inherit; text-align: left; cursor: pointer; display: flex; gap: 12px; align-items: flex-start;
