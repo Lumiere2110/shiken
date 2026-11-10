@@ -17,6 +17,7 @@ window.EXAM_CATALOG = [
         description: "ITを利活用する社会人・学生向けの国家試験",
         years: [
           { id: "r08", label: "令和8年度 公開問題", file: "data/it/ip/r08.js" },
+          { id: "r07", label: "令和7年度 公開問題", file: "data/it/ip/r07.js" },
           { id: "sample-2", label: "サンプル 第2回", file: "data/it/ip/sample-2.js" },
           { id: "sample-1", label: "サンプル 第1回", file: "data/it/ip/sample-1.js" }
         ]
