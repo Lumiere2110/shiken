@@ -29,6 +29,8 @@ window.EXAM_CATALOG = [
         years: [
           { id: "r08a", label: "令和8年度 公開問題 科目A", file: "data/it/fe/r08a.js" },
           { id: "r08b", label: "令和8年度 公開問題 科目B", file: "data/it/fe/r08b.js" },
+          { id: "r07a", label: "令和7年度 公開問題 科目A", file: "data/it/fe/r07a.js" },
+          { id: "r07b", label: "令和7年度 公開問題 科目B", file: "data/it/fe/r07b.js" },
           { id: "sample-1", label: "サンプル 第1回", file: "data/it/fe/sample-1.js" }
         ]
       },
