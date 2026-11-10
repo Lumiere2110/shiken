@@ -66,5 +66,18 @@ window.EXAM_CATALOG = [
         years: []
       }
     ]
+  },
+  {
+    id: "elec",
+    name: "電気・電子",
+    description: "電気主任技術者試験など電気・電子の試験",
+    exams: [
+      {
+        id: "denken3",
+        name: "第三種電気主任技術者試験",
+        description: "電験三種。理論・電力・機械・法規の4科目からなる国家試験",
+        years: []
+      }
+    ]
   }
 ];
