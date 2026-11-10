@@ -431,7 +431,6 @@
       if (!confirm("受験を中断しますか？（解答は破棄されます）")) { history.replaceState(null, "", window.EssayMode.hash()); return; }
       window.EssayMode.leave();
     }
-    if (location.hash === "#/settings") { window.scrollTo(0, 0); return window.EssayMode.renderSettings(essayCtx()); }
     if (session) {
       // 受験中に戻る操作をされた場合
       if (!confirm("受験を中断しますか？（解答は破棄されます）")) {
