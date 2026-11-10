@@ -47,5 +47,24 @@ window.EXAM_CATALOG = [
         ]
       }
     ]
+  },
+  {
+    id: "en",
+    name: "英語",
+    description: "英検・TOEIC などの英語の試験",
+    exams: [
+      {
+        id: "eiken",
+        name: "英検",
+        description: "日本英語検定協会の実用英語技能検定",
+        years: []
+      },
+      {
+        id: "toeic",
+        name: "TOEIC",
+        description: "ETS が実施する英語コミュニケーション能力テスト（L&R）",
+        years: []
+      }
+    ]
   }
 ];

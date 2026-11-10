@@ -153,7 +153,8 @@
         }
         return '<a class="row" href="#/' + [g.id, e.id, y.id].map(encodeURIComponent).join("/") + '"><span class="row-title">' +
           esc(y.label) + '</span><span class="row-meta">' + meta + "</span><span class=\"chev\">›</span></a>";
-      }).join("") + "</div>";
+      }).join("") + "</div>" +
+      ((e.years || []).length ? "" : '<p class="empty">この試験の過去問はまだ登録されていません。</p>');
   }
 
   function renderStart(g, e, y) {
