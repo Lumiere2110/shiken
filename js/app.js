@@ -5,7 +5,7 @@
 (function () {
   "use strict";
 
-  const LABELS = ["ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク"];
+  const LABELS = ["ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ", "サ", "シ"];
   const HISTORY_KEY = "shiken-history-v1";
   const app = document.getElementById("app");
   const topbarRight = document.getElementById("topbarRight");

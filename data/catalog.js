@@ -26,6 +26,8 @@ window.EXAM_CATALOG = [
         name: "基本情報技術者試験",
         description: "ITエンジニアの登竜門となる国家試験（科目A形式）",
         years: [
+          { id: "r08a", label: "令和8年度 公開問題 科目A", file: "data/it/fe/r08a.js" },
+          { id: "r08b", label: "令和8年度 公開問題 科目B", file: "data/it/fe/r08b.js" },
           { id: "sample-1", label: "サンプル 第1回", file: "data/it/fe/sample-1.js" }
         ]
       },
