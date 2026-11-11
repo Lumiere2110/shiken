@@ -43,7 +43,8 @@ window.EXAM_CATALOG = [
           { id: "r07h-pm", label: "令和7年度 春期 午後（科目B・記述式）", file: "data/it/ap/r07h_pm.js" },
           { id: "r06a", label: "令和6年度 秋期 午前（科目A）", file: "data/it/ap/r06a.js" },
           { id: "r06a-pm", label: "令和6年度 秋期 午後（科目B・記述式）", file: "data/it/ap/r06a_pm.js" },
-          { id: "r06h", label: "令和6年度 春期 午前（科目A）", file: "data/it/ap/r06h.js" }
+          { id: "r06h", label: "令和6年度 春期 午前（科目A）", file: "data/it/ap/r06h.js" },
+          { id: "r06h-pm", label: "令和6年度 春期 午後（科目B・記述式）", file: "data/it/ap/r06h_pm.js" }
         ]
       }
     ]
