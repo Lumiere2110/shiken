@@ -35,11 +35,12 @@ window.EXAM_CATALOG = [
       {
         id: "ap",
         name: "応用情報技術者試験",
-        description: "ワンランク上のITエンジニア向け国家試験（午前形式）",
+        description: "ワンランク上のITエンジニア向け国家試験（科目A＝旧午前・多肢選択式／科目B＝旧午後・記述式）",
         years: [
-          { id: "r07a", label: "令和7年度 秋期 午前", file: "data/it/ap/r07a.js" },
-          { id: "r07h", label: "令和7年度 春期 午前", file: "data/it/ap/r07h.js" },
-          { id: "r07a-pm", label: "令和7年度 秋期 午後（記述式）", file: "data/it/ap/r07a_pm.js" }
+          { id: "r07a", label: "令和7年度 秋期 午前（科目A）", file: "data/it/ap/r07a.js" },
+          { id: "r07a-pm", label: "令和7年度 秋期 午後（科目B・記述式）", file: "data/it/ap/r07a_pm.js" },
+          { id: "r07h", label: "令和7年度 春期 午前（科目A）", file: "data/it/ap/r07h.js" },
+          { id: "r06a", label: "令和6年度 秋期 午前（科目A）", file: "data/it/ap/r06a.js" }
         ]
       }
     ]
