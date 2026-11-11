@@ -107,6 +107,8 @@
     q.body.forEach(function (b) {
       if (b.heading) lines.push(b.heading);
       if (b.text) lines.push(b.text);
+      if (b.table) lines.push((b.table.caption ? b.table.caption + "\n" : "") + b.table.rows.map(function (r) { return "| " + r.map(function (c) { return String(c).replace(/^[_~]/, ""); }).join(" | ") + " |"; }).join("\n"));
+      if (b.code) lines.push("```\n" + b.code + "\n```");
       if (b.image) lines.push("（図: " + (b.caption || "図") + "）");
     });
     lines.push("\n## 設問・解答例・配点");
@@ -316,10 +318,26 @@
     } else if (el) el.textContent = "経過 " + fmtTime(elapsed);
   }
 
+  // 表: table = { caption, rows }（rows の1行目は見出し。セル先頭 "_" は実線下線，"~" は破線下線）
+  function tableHtml(t) {
+    if (!t || !t.rows || !t.rows.length) return "";
+    return '<div class="qtable-wrap"><table class="qtable">' + (t.caption ? "<caption>" + esc(t.caption) + "</caption>" : "") +
+      t.rows.map(function (r, i) {
+        const tag = i === 0 && t.header !== false ? "th" : "td";
+        return "<tr>" + r.map(function (c) {
+          c = String(c == null ? "" : c);
+          const inner = c[0] === "_" ? '<span class="pk">' + esc(c.slice(1)) + "</span>" : c[0] === "~" ? '<span class="fk">' + esc(c.slice(1)) + "</span>" : nl2br(c);
+          return "<" + tag + ">" + inner + "</" + tag + ">";
+        }).join("") + "</tr>";
+      }).join("") + "</table></div>";
+  }
+
   function bodyHtml(q) {
     return q.body.map(function (b) {
       return (b.heading ? "<h3>" + esc(b.heading) + "</h3>" : "") +
         (b.text ? '<div class="essay-text">' + nl2br(b.text) + "</div>" : "") +
+        tableHtml(b.table) +
+        (b.code ? '<pre class="code">' + esc(b.code) + "</pre>" : "") +
         (b.image ? '<figure><img class="qimg" src="' + esc(b.image) + '" alt="' + esc(b.caption || "図") + '"><figcaption>' + esc(b.caption || "") + "</figcaption></figure>" : "");
     }).join("");
   }
