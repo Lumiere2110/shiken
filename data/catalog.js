@@ -18,9 +18,7 @@ window.EXAM_CATALOG = [
         years: [
           { id: "r08", label: "令和8年度 公開問題", file: "data/it/ip/r08.js" },
           { id: "r07", label: "令和7年度 公開問題", file: "data/it/ip/r07.js" },
-          { id: "r06", label: "令和6年度 公開問題", file: "data/it/ip/r06.js" },
-          { id: "sample-2", label: "サンプル 第2回", file: "data/it/ip/sample-2.js" },
-          { id: "sample-1", label: "サンプル 第1回", file: "data/it/ip/sample-1.js" }
+          { id: "r06", label: "令和6年度 公開問題", file: "data/it/ip/r06.js" }
         ]
       },
       {
@@ -31,8 +29,7 @@ window.EXAM_CATALOG = [
           { id: "r08a", label: "令和8年度 公開問題 科目A", file: "data/it/fe/r08a.js" },
           { id: "r08b", label: "令和8年度 公開問題 科目B", file: "data/it/fe/r08b.js" },
           { id: "r07a", label: "令和7年度 公開問題 科目A", file: "data/it/fe/r07a.js" },
-          { id: "r07b", label: "令和7年度 公開問題 科目B", file: "data/it/fe/r07b.js" },
-          { id: "sample-1", label: "サンプル 第1回", file: "data/it/fe/sample-1.js" }
+          { id: "r07b", label: "令和7年度 公開問題 科目B", file: "data/it/fe/r07b.js" }
         ]
       },
       {
@@ -42,8 +39,7 @@ window.EXAM_CATALOG = [
         years: [
           { id: "r07a", label: "令和7年度 秋期 午前", file: "data/it/ap/r07a.js" },
           { id: "r07h", label: "令和7年度 春期 午前", file: "data/it/ap/r07h.js" },
-          { id: "r07a-pm", label: "令和7年度 秋期 午後（記述式）", file: "data/it/ap/r07a_pm.js" },
-          { id: "sample-1", label: "サンプル 第1回", file: "data/it/ap/sample-1.js" }
+          { id: "r07a-pm", label: "令和7年度 秋期 午後（記述式）", file: "data/it/ap/r07a_pm.js" }
         ]
       }
     ]

@@ -248,8 +248,11 @@
     const showResult = s.opts.practice && s.checked[i];
     const correctSet = answerSet(q);
 
+    const answeredCount = s.answers.filter(function (a) { return a.length; }).length;
     topbarRight.innerHTML = '<span class="timer" id="timer"></span>' +
-      '<button class="btn danger" id="finishBtn">試験終了</button>';
+      '<button class="btn" id="listBtn">問題一覧 <small>' + answeredCount + "/" + s.items.length + "</small></button>" +
+      '<button class="btn" id="calcBtn">電卓</button>' +
+      '<button class="btn danger" id="finishBtn">試験を終了</button>';
 
     const choicesHtml = item.order.map(function (orig, k) {
       const chosen = sel.indexOf(orig) >= 0;
@@ -276,26 +279,19 @@
       '<div class="qhead"><span class="qno">問' + (i + 1) + '<small> / ' + s.items.length + "</small></span>" +
       (q.category ? '<span class="tag">' + esc(q.category) + "</span>" : "") +
       (multi ? '<span class="tag multi">複数選択</span>' : "") +
-      '<button class="btn flag' + (s.flags[i] ? " on" : "") + '" id="flagBtn">' + (s.flags[i] ? "★ 見直し中" : "☆ 後で見直す") + "</button></div>" +
+      (s.flags[i] ? '<span class="tag flagtag">★ 見直し</span>' : "") + "</div>" +
       '<div class="qtext">' + nl2br(q.text) + "</div>" +
       figuresHtml(q) +
       '<div class="choices">' + choicesHtml + "</div>" +
       feedback +
-      '<div class="qnav">' +
-      '<button class="btn" id="prevBtn"' + (i === 0 ? " disabled" : "") + ">‹ 前へ</button>" +
+      "</section></div>" +
+      // 右下の操作ボタン
+      '<div class="cbt-foot">' +
       (s.opts.practice && !s.checked[i] ? '<button class="btn primary" id="checkBtn"' + (sel.length ? "" : " disabled") + ">解答を確認</button>" : "") +
-      (i < s.items.length - 1 ? '<button class="btn primary" id="nextBtn">次へ ›</button>' : '<button class="btn primary" id="reviewBtn">見直し画面へ</button>') +
-      "</div></section>" +
-      '<aside class="panel"><h3>問題一覧</h3><div class="grid">' + s.items.map(function (_, k) {
-        let cls = "cell";
-        if (s.answers[k].length) cls += " answered";
-        if (s.flags[k]) cls += " flagged";
-        if (k === i) cls += " current";
-        return '<button class="' + cls + '" data-go="' + k + '">' + (k + 1) + "</button>";
-      }).join("") + "</div>" +
-      '<ul class="legend"><li><i class="cell answered"></i>解答済み</li><li><i class="cell"></i>未解答</li><li><i class="cell flagged"></i>見直し</li></ul>' +
-      '<p class="count">解答済み ' + s.answers.filter(function (a) { return a.length; }).length + " / " + s.items.length + "</p>" +
-      "</aside></div>";
+      '<button class="btn flag' + (s.flags[i] ? " on" : "") + '" id="flagBtn">' + (s.flags[i] ? "★ 見直し中" : "☆ 後で見直す") + "</button>" +
+      '<button class="btn" id="prevBtn"' + (i === 0 ? " disabled" : "") + ">‹ 前へ</button>" +
+      '<button class="btn primary" id="nextBtn"' + (i === s.items.length - 1 ? " disabled" : "") + ">次へ ›</button>" +
+      "</div>";
 
     app.querySelectorAll(".choice").forEach(function (b) {
       b.onclick = function () {
@@ -309,54 +305,183 @@
         renderQuestion();
       };
     });
-    app.querySelectorAll("[data-go]").forEach(function (b) {
-      b.onclick = function () { go(Number(b.dataset.go)); };
-    });
     document.getElementById("flagBtn").onclick = function () { s.flags[i] = !s.flags[i]; renderQuestion(); };
     document.getElementById("prevBtn").onclick = function () { go(i - 1); };
-    const nb = document.getElementById("nextBtn"); if (nb) nb.onclick = function () { go(i + 1); };
-    const rb = document.getElementById("reviewBtn"); if (rb) rb.onclick = renderReview;
+    document.getElementById("nextBtn").onclick = function () { go(i + 1); };
     const cb = document.getElementById("checkBtn"); if (cb) cb.onclick = function () { s.checked[i] = true; renderQuestion(); };
-    document.getElementById("finishBtn").onclick = renderReview;
+    document.getElementById("listBtn").onclick = openList;
+    document.getElementById("calcBtn").onclick = Calc.toggle;
+    document.getElementById("finishBtn").onclick = openFinish;
     tick();
   }
 
   function go(k) {
     if (k < 0 || k >= session.items.length) return;
+    closeModal();
     session.cur = k;
     renderQuestion();
     window.scrollTo(0, 0);
   }
 
-  function renderReview() {
+  // ---------- モーダル（問題一覧・試験終了の確認） ----------
+  let modal = null;
+  function openModal(html, cls) {
+    closeModal();
+    modal = document.createElement("div");
+    modal.className = "modal-back";
+    modal.innerHTML = '<div class="modal ' + (cls || "") + '" role="dialog" aria-modal="true">' + html + "</div>";
+    modal.addEventListener("click", function (ev) {
+      if (ev.target === modal || ev.target.closest("[data-close]")) closeModal();
+    });
+    document.body.appendChild(modal);
+    return modal;
+  }
+  function closeModal() {
+    if (modal) { modal.remove(); modal = null; }
+  }
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && modal) { ev.stopImmediatePropagation(); closeModal(); }
+  });
+
+  function openList() {
     const s = session;
-    const unanswered = s.answers.filter(function (a) { return !a.length; }).length;
-    const flagged = s.flags.filter(Boolean).length;
-    topbarRight.innerHTML = '<span class="timer" id="timer"></span>';
-    app.innerHTML = '<section class="review">' +
-      "<h1>見直し</h1>" +
-      '<p>未解答 <b class="' + (unanswered ? "ng" : "") + '">' + unanswered + "</b> 問 ・ 見直しマーク <b>" + flagged + "</b> 問</p>" +
+    const answered = s.answers.filter(function (a) { return a.length; }).length;
+    const m = openModal(
+      '<div class="modal-head"><h3>問題一覧</h3><button class="btn icon" data-close aria-label="閉じる">×</button></div>' +
+      '<p class="count">解答済み ' + answered + " / " + s.items.length + " ・ 見直し " + s.flags.filter(Boolean).length + " 問</p>" +
       '<div class="grid big">' + s.items.map(function (_, k) {
         let cls = "cell";
         if (s.answers[k].length) cls += " answered";
         if (s.flags[k]) cls += " flagged";
+        if (k === s.cur) cls += " current";
         return '<button class="' + cls + '" data-go="' + k + '">' + (k + 1) + "</button>";
       }).join("") + "</div>" +
-      '<div class="qnav"><button class="btn" id="backBtn">問題に戻る</button>' +
-      '<button class="btn danger" id="endBtn">採点して終了する</button></div></section>';
-    app.querySelectorAll("[data-go]").forEach(function (b) { b.onclick = function () { go(Number(b.dataset.go)); }; });
-    document.getElementById("backBtn").onclick = function () { go(s.cur); };
-    document.getElementById("endBtn").onclick = function () {
-      if (confirm("試験を終了して採点します。よろしいですか？" + (unanswered ? "\n（未解答が " + unanswered + " 問あります）" : ""))) finishExam(false);
-    };
-    tick();
+      '<ul class="legend"><li><i class="cell answered"></i>解答済み</li><li><i class="cell"></i>未解答</li><li><i class="cell flagged"></i>見直し</li><li><i class="cell current"></i>表示中</li></ul>',
+      "list-modal");
+    m.querySelectorAll("[data-go]").forEach(function (b) { b.onclick = function () { go(Number(b.dataset.go)); }; });
   }
+
+  function openFinish() {
+    const s = session;
+    const unanswered = s.answers.filter(function (a) { return !a.length; }).length;
+    const flagged = s.flags.filter(Boolean).length;
+    const m = openModal(
+      "<h3>試験を終了して採点しますか？</h3>" +
+      "<p>未解答 <b class=\"" + (unanswered ? "ng" : "") + "\">" + unanswered + "</b> 問 ・ 見直しマーク <b>" + flagged + "</b> 問</p>" +
+      (unanswered ? '<p class="note">未解答の問題は不正解になります。</p>' : "") +
+      '<div class="modal-actions"><button class="btn" data-close>試験に戻る</button>' +
+      '<button class="btn danger-fill" id="endBtn">終了して採点する</button></div>',
+      "finish-modal");
+    m.querySelector("#endBtn").onclick = function () { closeModal(); finishExam(false); };
+  }
+
+  // ---------- 電卓 ----------
+  const Calc = (function () {
+    let box = null, disp = "0", acc = null, op = null, fresh = true;
+    const SYM = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+    const KEYS = [
+      ["C", "clear"], ["CE", "ce"], ["⌫", "bs"], ["÷", "op/"],
+      ["7", "d7"], ["8", "d8"], ["9", "d9"], ["×", "op*"],
+      ["4", "d4"], ["5", "d5"], ["6", "d6"], ["−", "op-"],
+      ["1", "d1"], ["2", "d2"], ["3", "d3"], ["+", "op+"],
+      ["±", "neg"], ["0", "d0"], [".", "d."], ["=", "eq"],
+      ["√", "sqrt"], ["%", "pct"]
+    ];
+    function fmt(x) {
+      if (!isFinite(x)) return "エラー";
+      return String(parseFloat(x.toPrecision(12)));
+    }
+    function num() { return disp === "エラー" ? 0 : parseFloat(disp); }
+    function calc(a, o, b) {
+      return o === "+" ? a + b : o === "-" ? a - b : o === "*" ? a * b : b === 0 ? NaN : a / b;
+    }
+    function press(k) {
+      if (disp === "エラー" && k !== "clear") { disp = "0"; acc = null; op = null; fresh = true; }
+      if (k[0] === "d") {
+        const d = k.slice(1);
+        if (fresh) { disp = d === "." ? "0." : d; fresh = false; }
+        else if (d === "." && disp.indexOf(".") >= 0) return;
+        else if (disp.replace(/[-.]/g, "").length >= 15) return;
+        else disp = disp === "0" && d !== "." ? d : disp + d;
+      } else if (k.slice(0, 2) === "op") {
+        if (op && !fresh) { disp = fmt(calc(acc, op, num())); }
+        acc = num(); op = k.slice(2); fresh = true;
+      } else if (k === "eq") {
+        if (!op) return;
+        disp = fmt(calc(acc, op, num())); acc = null; op = null; fresh = true;
+      } else if (k === "clear") { disp = "0"; acc = null; op = null; fresh = true; }
+      else if (k === "ce") { disp = "0"; fresh = true; }
+      else if (k === "bs") {
+        if (fresh) return;
+        disp = disp.length > 1 && !(disp.length === 2 && disp[0] === "-") ? disp.slice(0, -1) : "0";
+      } else if (k === "neg") { if (disp !== "0") disp = disp[0] === "-" ? disp.slice(1) : "-" + disp; }
+      else if (k === "sqrt") { disp = fmt(Math.sqrt(num())); fresh = true; }
+      else if (k === "pct") { disp = fmt(num() / 100); fresh = true; }
+      draw();
+    }
+    function draw() {
+      if (!box) return;
+      box.querySelector(".calc-expr").textContent = op ? fmt(acc) + " " + SYM[op] : "";
+      box.querySelector(".calc-disp").textContent = disp;
+    }
+    function open() {
+      if (box) return;
+      box = document.createElement("div");
+      box.className = "calc";
+      box.innerHTML = '<div class="calc-head"><span>電卓</span><button class="btn icon" aria-label="閉じる">×</button></div>' +
+        '<div class="calc-screen"><div class="calc-expr"></div><div class="calc-disp"></div></div>' +
+        '<div class="calc-keys">' + KEYS.map(function (k) {
+          const cls = k[1].slice(0, 2) === "op" || k[1] === "eq" ? " opkey" : k[1][0] === "d" || k[1] === "neg" ? " numkey" : "";
+          return '<button class="ckey' + cls + (k[1] === "eq" ? " eq" : "") + '" data-k="' + k[1] + '">' + k[0] + "</button>";
+        }).join("") + "</div>";
+      box.querySelector(".calc-head .btn").onclick = close;
+      box.querySelectorAll("[data-k]").forEach(function (b) { b.onclick = function () { press(b.dataset.k); }; });
+      // ヘッダーをドラッグして移動
+      const head = box.querySelector(".calc-head");
+      head.addEventListener("pointerdown", function (ev) {
+        if (ev.target.closest("button")) return;
+        const r = box.getBoundingClientRect(), dx = ev.clientX - r.left, dy = ev.clientY - r.top;
+        head.setPointerCapture(ev.pointerId);
+        function move(e) {
+          const x = Math.min(Math.max(0, e.clientX - dx), window.innerWidth - r.width);
+          const y = Math.min(Math.max(0, e.clientY - dy), window.innerHeight - r.height);
+          box.style.left = x + "px"; box.style.top = y + "px"; box.style.right = "auto"; box.style.bottom = "auto";
+        }
+        function up() { head.removeEventListener("pointermove", move); head.removeEventListener("pointerup", up); }
+        head.addEventListener("pointermove", move);
+        head.addEventListener("pointerup", up);
+      });
+      document.body.appendChild(box);
+      draw();
+    }
+    function close() { if (box) { box.remove(); box = null; } }
+    function toggle() { box ? close() : open(); }
+    // 電卓が開いているときはキーボードでも入力できる
+    document.addEventListener("keydown", function (ev) {
+      if (!box || modal || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      if (ev.target.closest && ev.target.closest("input, textarea, select")) return;
+      const k = ev.key;
+      let code = null;
+      if (/^[0-9.]$/.test(k)) code = "d" + k;
+      else if ("+-*/".indexOf(k) >= 0) code = "op" + k;
+      else if (k === "Enter" || k === "=") code = "eq";
+      else if (k === "Backspace") code = "bs";
+      else if (k === "Escape") code = "clear";
+      else if (k === "Delete") code = "ce";
+      else if (k === "%") code = "pct";
+      if (!code) return;
+      ev.preventDefault();
+      press(code);
+    });
+    return { toggle: toggle, close: close };
+  })();
 
   // ---------- 画面: 結果 ----------
   function finishExam(timeUp) {
     if (!session) return;
     clearInterval(timerId); timerId = null;
     window.onbeforeunload = null;
+    closeModal(); Calc.close();
     const s = session; session = null;
     const elapsed = Math.min((Date.now() - s.start) / 1000, s.limit || Infinity);
     const results = s.items.map(function (item, k) {
@@ -438,6 +563,7 @@
         return;
       }
       clearInterval(timerId); timerId = null; session = null; window.onbeforeunload = null;
+      closeModal(); Calc.close();
     }
     const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
     const g = findGenre(parts[0]), e = findExam(g, parts[1]), y = findYear(e, parts[2]);
