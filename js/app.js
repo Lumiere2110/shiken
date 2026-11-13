@@ -7,6 +7,7 @@
 
   const LABELS = ["ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ", "サ", "シ"];
   const HISTORY_KEY = "shiken-history-v1";
+  const WRONG_KEY = "shiken-wrong-v1";
   const app = document.getElementById("app");
   const topbarRight = document.getElementById("topbarRight");
   const catalog = window.EXAM_CATALOG || [];
@@ -104,6 +105,29 @@
     } catch (e) { /* 保存できない環境では無視 */ }
   }
 
+  // 間違えた問題の記録: { "genre/exam/year": [元の問題番号, ...] }
+  function loadWrongAll() {
+    try { return JSON.parse(localStorage.getItem(WRONG_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function loadWrong(key) { return loadWrongAll()[key] || []; }
+  function updateWrong(key, list) {
+    try {
+      const all = loadWrongAll();
+      const set = (all[key] || []).slice();
+      list.forEach(function (x) {
+        const p = set.indexOf(x.orig);
+        if (!x.ok && p < 0) set.push(x.orig);
+        if (x.ok && p >= 0) set.splice(p, 1);
+      });
+      set.sort(function (a, b) { return a - b; });
+      if (set.length) all[key] = set; else delete all[key];
+      localStorage.setItem(WRONG_KEY, JSON.stringify(all));
+    } catch (e) { /* 保存できない環境では無視 */ }
+  }
+  function clearWrong(key) {
+    try { const all = loadWrongAll(); delete all[key]; localStorage.setItem(WRONG_KEY, JSON.stringify(all)); } catch (e) { /* 無視 */ }
+  }
+
   // ---------- 画面: 選択（ジャンル → 試験 → 年度） ----------
   function breadcrumb(parts) {
     return '<nav class="crumbs">' + parts.map(function (p, i) {
@@ -151,6 +175,8 @@
           const best = Math.max.apply(null, recs.map(function (r) { return r.rate; }));
           meta = "受験 " + recs.length + " 回 ・ 最高 " + best + "% ・ 前回 " + recs[recs.length - 1].rate + "%";
         }
+        const wn = loadWrong(g.id + "/" + e.id + "/" + y.id).length;
+        if (wn) meta += " ・ 間違えた問題 " + wn + " 問";
         return '<a class="row" href="#/' + [g.id, e.id, y.id].map(encodeURIComponent).join("/") + '"><span class="row-title">' +
           esc(y.label) + '</span><span class="row-meta">' + meta + "</span><span class=\"chev\">›</span></a>";
       }).join("") + "</div>" +
@@ -163,6 +189,8 @@
     loadExamFile(y.file).then(function (data) {
       if (data.format === "essay") return window.EssayMode.renderStart(essayCtx(), g, e, y, data);
       const n = data.questions.length;
+      const key = g.id + "/" + e.id + "/" + y.id;
+      const wrong = loadWrong(key).filter(function (k) { return k < n; });
       app.innerHTML = steps(3) +
         breadcrumb([{ label: "ジャンル", href: "#/" }, { label: g.name, href: "#/" + g.id }, { label: e.name, href: "#/" + g.id + "/" + e.id }, { label: y.label }]) +
         '<section class="start">' +
@@ -182,15 +210,25 @@
         '<label><input type="checkbox" id="optShuffleC"> 選択肢の順番をシャッフル</label>' +
         '<label><input type="checkbox" id="optNoTimer"> 制限時間なし</label>' +
         "</fieldset>" +
-        '<button class="btn primary big" id="startBtn">試験を開始する</button>' +
+        '<div class="start-actions"><button class="btn primary big" id="startBtn">試験を開始する</button>' +
+        (wrong.length ? '<button class="btn big" id="wrongBtn">間違えた問題だけ受ける（' + wrong.length + " 問）</button>" : "") + "</div>" +
+        (wrong.length ? '<p class="note">間違えた問題の記録: ' + wrong.map(function (n) { return "問" + (n + 1); }).join("、") +
+          '　<button class="linkbtn" id="clearWrong">記録を消す</button></p>' : "") +
         "</section>";
-      document.getElementById("startBtn").onclick = function () {
-        startExam(g, e, y, data, {
+      function opts() {
+        return {
           practice: document.querySelector('input[name="mode"]:checked').value === "practice",
           shuffleQ: document.getElementById("optShuffleQ").checked,
           shuffleC: document.getElementById("optShuffleC").checked,
           noTimer: document.getElementById("optNoTimer").checked
-        });
+        };
+      }
+      document.getElementById("startBtn").onclick = function () { startExam(g, e, y, data, opts()); };
+      const wb = document.getElementById("wrongBtn");
+      if (wb) wb.onclick = function () { startExam(g, e, y, data, opts(), wrong); };
+      const cw = document.getElementById("clearWrong");
+      if (cw) cw.onclick = function () {
+        if (confirm("この回の「間違えた問題」の記録を消しますか？")) { clearWrong(key); renderStart(g, e, y); }
       };
     }).catch(function (err) {
       app.innerHTML = '<p class="error">' + esc(err.message) + '</p><p><a href="#/">ジャンル選択に戻る</a></p>';
@@ -215,10 +253,12 @@
       g: g, e: e, y: y, data: data, opts: opts, items: qs,
       answers: qs.map(function () { return []; }), // 元の選択肢番号
       flags: qs.map(function () { return false; }),
+      marks: qs.map(function () { return false; }), // 受験者が付けたチェック（結果に印を出す）
       checked: qs.map(function () { return false; }), // 練習モードで確認済み
       cur: 0, start: Date.now(), limit: scaled, retry: !!onlyIndexes
     };
     window.onbeforeunload = function () { return "受験中です。"; };
+    document.body.classList.add("in-cbt");
     renderQuestion();
     if (timerId) clearInterval(timerId);
     timerId = setInterval(tick, 500);
@@ -250,20 +290,27 @@
 
     const answeredCount = s.answers.filter(function (a) { return a.length; }).length;
     topbarRight.innerHTML = '<span class="timer" id="timer"></span>' +
-      '<button class="btn" id="listBtn">問題一覧 <small>' + answeredCount + "/" + s.items.length + "</small></button>" +
-      '<button class="btn" id="calcBtn">電卓</button>' +
       '<button class="btn danger" id="finishBtn">試験を終了</button>';
 
-    const choicesHtml = item.order.map(function (orig, k) {
+    // 選択肢: 左に文字、右に解答ボタン
+    function stateCls(orig) {
       const chosen = sel.indexOf(orig) >= 0;
-      let cls = "choice" + (chosen ? " chosen" : "");
+      let cls = chosen ? " chosen" : "";
       if (showResult) {
         if (correctSet.indexOf(orig) >= 0) cls += " correct";
         else if (chosen) cls += " wrong";
       }
-      return '<button class="' + cls + '" data-orig="' + orig + '"' + (showResult ? " disabled" : "") + '>' +
-        '<span class="lbl">' + LABELS[k] + "</span><span class=\"txt\">" + nl2br(q.choices[orig]) + "</span></button>";
-    }).join("");
+      return cls;
+    }
+    const choicesHtml =
+      '<ol class="choice-list">' + item.order.map(function (orig, k) {
+        return '<li class="ctext' + stateCls(orig) + '"><span class="lbl">' + LABELS[k] + '</span><span class="txt">' + nl2br(q.choices[orig]) + "</span></li>";
+      }).join("") + "</ol>" +
+      '<div class="answer-pad" role="group" aria-label="解答"><div class="pad-title">解答' + (multi ? "<small>（複数）</small>" : "") + "</div>" +
+      item.order.map(function (orig, k) {
+        return '<button class="choice' + stateCls(orig) + '" data-orig="' + orig + '"' + (showResult ? " disabled" : "") +
+          ' aria-pressed="' + (sel.indexOf(orig) >= 0) + '">' + LABELS[k] + "</button>";
+      }).join("") + "</div>";
 
     let feedback = "";
     if (showResult) {
@@ -277,21 +324,26 @@
       '<div class="cbt">' +
       '<section class="qpane">' +
       '<div class="qhead"><span class="qno">問' + (i + 1) + '<small> / ' + s.items.length + "</small></span>" +
+      (s.retry ? '<span class="tag">元の問' + (item.orig + 1) + "</span>" : "") +
       (q.category ? '<span class="tag">' + esc(q.category) + "</span>" : "") +
       (multi ? '<span class="tag multi">複数選択</span>' : "") +
-      (s.flags[i] ? '<span class="tag flagtag">★ 見直し</span>' : "") + "</div>" +
+      (s.flags[i] ? '<span class="tag flagtag">★ 見直し</span>' : "") +
+      '<button class="btn markbtn' + (s.marks[i] ? " on" : "") + '" id="markBtn" aria-pressed="' + s.marks[i] + '">' +
+      (s.marks[i] ? "✔ チェック済み" : "☐ チェック") + "</button></div>" +
       '<div class="qtext">' + nl2br(q.text) + "</div>" +
       figuresHtml(q) +
       '<div class="choices">' + choicesHtml + "</div>" +
       feedback +
-      "</section></div>" +
-      // 右下の操作ボタン
-      '<div class="cbt-foot">' +
+      "</section>" +
+      // 問題のすぐ下: 左に「問題一覧」「電卓」、右に「後で見直す」「前へ」「次へ」
+      '<div class="qactions"><div class="qa-left">' +
+      '<button class="btn" id="listBtn">問題一覧 <small>' + answeredCount + "/" + s.items.length + "</small></button>" +
+      '<button class="btn" id="calcBtn">電卓</button></div><div class="qa-right">' +
       (s.opts.practice && !s.checked[i] ? '<button class="btn primary" id="checkBtn"' + (sel.length ? "" : " disabled") + ">解答を確認</button>" : "") +
       '<button class="btn flag' + (s.flags[i] ? " on" : "") + '" id="flagBtn">' + (s.flags[i] ? "★ 見直し中" : "☆ 後で見直す") + "</button>" +
       '<button class="btn" id="prevBtn"' + (i === 0 ? " disabled" : "") + ">‹ 前へ</button>" +
       '<button class="btn primary" id="nextBtn"' + (i === s.items.length - 1 ? " disabled" : "") + ">次へ ›</button>" +
-      "</div>";
+      "</div></div></div>";
 
     app.querySelectorAll(".choice").forEach(function (b) {
       b.onclick = function () {
@@ -306,6 +358,7 @@
       };
     });
     document.getElementById("flagBtn").onclick = function () { s.flags[i] = !s.flags[i]; renderQuestion(); };
+    document.getElementById("markBtn").onclick = function () { s.marks[i] = !s.marks[i]; renderQuestion(); };
     document.getElementById("prevBtn").onclick = function () { go(i - 1); };
     document.getElementById("nextBtn").onclick = function () { go(i + 1); };
     const cb = document.getElementById("checkBtn"); if (cb) cb.onclick = function () { s.checked[i] = true; renderQuestion(); };
@@ -348,15 +401,16 @@
     const answered = s.answers.filter(function (a) { return a.length; }).length;
     const m = openModal(
       '<div class="modal-head"><h3>問題一覧</h3><button class="btn icon" data-close aria-label="閉じる">×</button></div>' +
-      '<p class="count">解答済み ' + answered + " / " + s.items.length + " ・ 見直し " + s.flags.filter(Boolean).length + " 問</p>" +
+      '<p class="count">解答済み ' + answered + " / " + s.items.length + " ・ 見直し " + s.flags.filter(Boolean).length + " 問 ・ チェック " + s.marks.filter(Boolean).length + " 問</p>" +
       '<div class="grid big">' + s.items.map(function (_, k) {
         let cls = "cell";
         if (s.answers[k].length) cls += " answered";
         if (s.flags[k]) cls += " flagged";
+        if (s.marks[k]) cls += " marked";
         if (k === s.cur) cls += " current";
         return '<button class="' + cls + '" data-go="' + k + '">' + (k + 1) + "</button>";
       }).join("") + "</div>" +
-      '<ul class="legend"><li><i class="cell answered"></i>解答済み</li><li><i class="cell"></i>未解答</li><li><i class="cell flagged"></i>見直し</li><li><i class="cell current"></i>表示中</li></ul>',
+      '<ul class="legend"><li><i class="cell answered"></i>解答済み</li><li><i class="cell"></i>未解答</li><li><i class="cell flagged"></i>見直し</li><li><i class="cell marked"></i>チェック</li><li><i class="cell current"></i>表示中</li></ul>',
       "list-modal");
     m.querySelectorAll("[data-go]").forEach(function (b) { b.onclick = function () { go(Number(b.dataset.go)); }; });
   }
@@ -365,9 +419,10 @@
     const s = session;
     const unanswered = s.answers.filter(function (a) { return !a.length; }).length;
     const flagged = s.flags.filter(Boolean).length;
+    const marked = s.marks.filter(Boolean).length;
     const m = openModal(
       "<h3>試験を終了して採点しますか？</h3>" +
-      "<p>未解答 <b class=\"" + (unanswered ? "ng" : "") + "\">" + unanswered + "</b> 問 ・ 見直しマーク <b>" + flagged + "</b> 問</p>" +
+      "<p>未解答 <b class=\"" + (unanswered ? "ng" : "") + "\">" + unanswered + "</b> 問 ・ 見直しマーク <b>" + flagged + "</b> 問 ・ チェック <b>" + marked + "</b> 問</p>" +
       (unanswered ? '<p class="note">未解答の問題は不正解になります。</p>' : "") +
       '<div class="modal-actions"><button class="btn" data-close>試験に戻る</button>' +
       '<button class="btn danger-fill" id="endBtn">終了して採点する</button></div>',
@@ -378,6 +433,18 @@
   // ---------- 電卓 ----------
   const Calc = (function () {
     let box = null, disp = "0", acc = null, op = null, fresh = true;
+    // 移動した位置を覚えておき、次に開いたときも同じ場所に出す
+    const POS_KEY = "shiken-calc-pos";
+    let pos = null;
+    try { pos = JSON.parse(localStorage.getItem(POS_KEY)); } catch (e) { pos = null; }
+    function place() {
+      if (!box || !pos) return;
+      const r = box.getBoundingClientRect();
+      const x = Math.min(Math.max(0, pos.x), Math.max(0, window.innerWidth - r.width));
+      const y = Math.min(Math.max(0, pos.y), Math.max(0, window.innerHeight - r.height));
+      box.style.left = x + "px"; box.style.top = y + "px"; box.style.right = "auto"; box.style.bottom = "auto";
+    }
+    window.addEventListener("resize", place);
     const SYM = { "+": "+", "-": "−", "*": "×", "/": "÷" };
     const KEYS = [
       ["C", "clear"], ["CE", "ce"], ["⌫", "bs"], ["÷", "op/"],
@@ -447,11 +514,17 @@
           const y = Math.min(Math.max(0, e.clientY - dy), window.innerHeight - r.height);
           box.style.left = x + "px"; box.style.top = y + "px"; box.style.right = "auto"; box.style.bottom = "auto";
         }
-        function up() { head.removeEventListener("pointermove", move); head.removeEventListener("pointerup", up); }
+        function up() {
+          head.removeEventListener("pointermove", move); head.removeEventListener("pointerup", up);
+          const b = box.getBoundingClientRect();
+          pos = { x: Math.round(b.left), y: Math.round(b.top) };
+          try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch (e) { /* 無視 */ }
+        }
         head.addEventListener("pointermove", move);
         head.addEventListener("pointerup", up);
       });
       document.body.appendChild(box);
+      place();
       draw();
     }
     function close() { if (box) { box.remove(); box = null; } }
@@ -481,16 +554,22 @@
     if (!session) return;
     clearInterval(timerId); timerId = null;
     window.onbeforeunload = null;
+    document.body.classList.remove("in-cbt");
     closeModal(); Calc.close();
     const s = session; session = null;
     const elapsed = Math.min((Date.now() - s.start) / 1000, s.limit || Infinity);
     const results = s.items.map(function (item, k) {
-      return { item: item, sel: s.answers[k], ok: sameSet(s.answers[k], answerSet(item.q)) };
+      return { item: item, sel: s.answers[k], ok: sameSet(s.answers[k], answerSet(item.q)), marked: s.marks[k] };
     });
+    const examKey = s.g.id + "/" + s.e.id + "/" + s.y.id;
+    // 間違えた問題を記録（正解した問題は記録から外す）
+    updateWrong(examKey, results.map(function (r) { return { orig: r.item.orig, ok: r.ok }; }));
+    const wrongLeft = loadWrong(examKey).length;
+    const markedCount = results.filter(function (r) { return r.marked; }).length;
     const correct = results.filter(function (r) { return r.ok; }).length;
     const rate = Math.round(correct / results.length * 100);
     const pass = s.data.passingRate != null ? rate >= s.data.passingRate : null;
-    if (!s.retry) saveHistory(s.g.id + "/" + s.e.id + "/" + s.y.id, { date: new Date().toISOString(), correct: correct, total: results.length, rate: rate });
+    if (!s.retry) saveHistory(examKey, { date: new Date().toISOString(), correct: correct, total: results.length, rate: rate });
 
     // 分野別集計
     const cats = {};
@@ -517,12 +596,17 @@
       (results.some(function (r) { return !r.ok; }) ? '<button class="btn primary" id="retryWrong">間違えた問題だけ再挑戦</button>' : "") +
       '<button class="btn" id="retryAll">もう一度受ける</button>' +
       '<a class="btn" href="#/' + s.g.id + "/" + s.e.id + '">年度選択に戻る</a></div>' +
-      '<h2>解答と解説 <label class="filter"><input type="checkbox" id="onlyWrong"> 間違えた問題のみ表示</label></h2>' +
+      '<p class="note">間違えた問題は記録されます（この回で現在 ' + wrongLeft + " 問）。年度の開始画面から、記録した問題だけを受けられます。</p>" +
+      (markedCount ? '<p class="marked-sum"><span class="markbadge">✔ チェック</span> を付けた問題: ' +
+        results.map(function (r, k) { return r.marked ? "問" + (k + 1) + (r.ok ? "（○）" : "（×）") : null; }).filter(Boolean).join("、") + "</p>" : "") +
+      '<h2>解答と解説 <label class="filter"><input type="checkbox" id="onlyWrong"> 間違えた問題のみ表示</label>' +
+      (markedCount ? '<label class="filter"><input type="checkbox" id="onlyMarked"> チェックした問題のみ表示</label>' : "") + "</h2>" +
       '<div class="answers">' + results.map(function (r, k) {
         const q = r.item.q, order = r.item.order;
         const lab = function (orig) { return LABELS[order.indexOf(orig)]; };
-        return '<details class="ans ' + (r.ok ? "ok" : "ng") + '"' + (r.ok ? "" : " open") + ">" +
-          "<summary><span class=\"mark\">" + (r.ok ? "○" : "×") + "</span> 問" + (k + 1) + "　" + esc(q.text.split("\n")[0].slice(0, 60)) + "</summary>" +
+        return '<details class="ans ' + (r.ok ? "ok" : "ng") + (r.marked ? " marked" : "") + '"' + (r.ok && !r.marked ? "" : " open") + ">" +
+          "<summary><span class=\"mark\">" + (r.ok ? "○" : "×") + "</span> 問" + (k + 1) +
+          (r.marked ? ' <span class="markbadge">✔ チェック</span>' : "") + "　" + esc(q.text.split("\n")[0].slice(0, 60)) + "</summary>" +
           '<div class="qtext">' + nl2br(q.text) + "</div>" +
           figuresHtml(q) +
           '<ul class="ans-choices">' + order.map(function (orig, i) {
@@ -538,6 +622,8 @@
     document.getElementById("onlyWrong").onchange = function (ev) {
       app.querySelector(".answers").classList.toggle("only-wrong", ev.target.checked);
     };
+    const om = document.getElementById("onlyMarked");
+    if (om) om.onchange = function (ev) { app.querySelector(".answers").classList.toggle("only-marked", ev.target.checked); };
     document.getElementById("retryAll").onclick = function () { startExam(s.g, s.e, s.y, s.data, s.opts); };
     const rw = document.getElementById("retryWrong");
     if (rw) rw.onclick = function () {
@@ -565,6 +651,7 @@
       clearInterval(timerId); timerId = null; session = null; window.onbeforeunload = null;
       closeModal(); Calc.close();
     }
+    document.body.classList.remove("in-cbt");
     const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
     const g = findGenre(parts[0]), e = findExam(g, parts[1]), y = findYear(e, parts[2]);
     window.scrollTo(0, 0);

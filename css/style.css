@@ -116,20 +116,25 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
 .opts small { color: var(--muted); }
 
 /* CBT */
-.cbt { display: block; padding-bottom: 72px; }
-.topbar-right small { color: var(--muted); font-size: .78rem; }
+/* 受験中は問題を大きく表示し、少し左に寄せる */
+body.in-cbt main { max-width: 1320px; margin: 0 auto 0 clamp(8px, 3vw, 64px); padding-top: 16px; }
+.cbt { display: block; }
+.topbar-right small, .qactions small { color: var(--muted); font-size: .78rem; }
 .btn.danger-fill { background: var(--ng); border-color: var(--ng); color: #fff; }
 .btn.icon { padding: 2px 10px; font-size: 1.1rem; line-height: 1.4; }
 .tag.flagtag { background: var(--flag-weak); color: var(--flag); }
+.btn.markbtn { margin-left: auto; padding: 4px 12px; font-size: .9rem; }
+.btn.markbtn.on { background: var(--ok-weak); border-color: var(--ok); color: var(--ok); font-weight: 700; }
 
-/* 右下の操作ボタン */
-.cbt-foot {
-  position: fixed; right: 0; bottom: 0; left: 0; z-index: 9;
-  display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
-  padding: 10px 16px; background: var(--surface); border-top: 1px solid var(--line);
+/* 問題のすぐ下の操作ボタン（左: 問題一覧・電卓 / 右: 後で見直す・前へ・次へ） */
+.qactions {
+  position: sticky; bottom: 0; z-index: 9;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 0; background: var(--bg);
 }
-.cbt-foot .btn { min-width: 96px; }
-.cbt-foot .btn.flag { margin-left: 0; padding: 8px 16px; font-size: inherit; }
+.qa-left, .qa-right { display: flex; gap: 10px; flex-wrap: wrap; }
+.qactions .btn { min-width: 96px; }
+.qactions .btn.flag { margin-left: 0; padding: 8px 16px; font-size: inherit; }
 
 /* モーダル（問題一覧・試験終了） */
 .modal-back { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .45); display: grid; place-items: center; padding: 16px; }
@@ -163,6 +168,11 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
 .qpane, .panel, .review, .result { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 24px; }
 .qhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 14px; }
 .qno { font-size: 1.3rem; font-weight: 700; }
+body.in-cbt .qpane { padding: 24px 32px; }
+body.in-cbt .qno { font-size: 1.5rem; }
+body.in-cbt .qpane .qtext { font-size: 1.2rem; line-height: 1.85; }
+body.in-cbt .qtable { font-size: 1.05rem; }
+body.in-cbt .code { font-size: 1rem; }
 .qno small { font-size: .85rem; color: var(--muted); font-weight: 400; }
 .tag { font-size: .75rem; padding: 2px 8px; border-radius: 999px; background: var(--primary-weak); color: var(--primary); }
 .tag.multi { background: var(--flag-weak); color: var(--flag); }
@@ -176,19 +186,30 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
 .qtable .pk { text-decoration: underline; text-underline-offset: 3px; }
 .qtable .fk { text-decoration: underline dashed; text-underline-offset: 3px; }
 .qimg { display: block; background: #fff; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 14px; }
-.choices { display: flex; flex-direction: column; gap: 8px; }
+/* 選択肢: 左に文字、右に解答ボタン */
+.choices { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: start; }
+.choice-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ctext { display: flex; gap: 12px; align-items: flex-start; padding: 4px 8px; border-radius: 6px; font-size: 1.12rem; }
+.ctext .lbl { flex: none; font-weight: 700; min-width: 1.6em; }
+.ctext.chosen { background: var(--primary-weak); }
+.ctext.chosen .lbl { color: var(--primary); }
+.ctext.correct { background: var(--ok-weak); }
+.ctext.wrong { background: var(--ng-weak); }
+.answer-pad {
+  position: sticky; top: 72px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg);
+}
+.pad-title { font-size: .85rem; color: var(--muted); font-weight: 700; text-align: center; line-height: 1.3; }
+.pad-title small { display: block; font-weight: 400; }
 .choice {
-  font: inherit; text-align: left; cursor: pointer; display: flex; gap: 12px; align-items: flex-start;
-  padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  font: inherit; font-size: 1.15rem; font-weight: 700; cursor: pointer;
+  width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid var(--line); background: var(--surface); color: var(--text);
 }
 .choice:hover:not(:disabled) { border-color: var(--primary); }
-.choice .lbl { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); font-weight: 700; }
-.choice.chosen { border-color: var(--primary); background: var(--primary-weak); }
-.choice.chosen .lbl { background: var(--primary); border-color: var(--primary); color: #fff; }
-.choice.correct { border-color: var(--ok); background: var(--ok-weak); }
-.choice.correct .lbl { background: var(--ok); border-color: var(--ok); color: #fff; }
-.choice.wrong { border-color: var(--ng); background: var(--ng-weak); }
-.choice.wrong .lbl { background: var(--ng); border-color: var(--ng); color: #fff; }
+.choice.chosen { border-color: var(--primary); background: var(--primary); color: #fff; }
+.choice.correct { border-color: var(--ok); background: var(--ok); color: #fff; }
+.choice.wrong { border-color: var(--ng); background: var(--ng); color: #fff; }
 .choice:disabled { cursor: default; }
 .feedback { margin-top: 14px; padding: 12px 14px; border-radius: 8px; }
 .feedback.ok { background: var(--ok-weak); }
@@ -207,6 +228,8 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
 }
 .cell.answered { background: var(--primary-weak); border-color: var(--primary); }
 .cell.flagged::after { content: "★"; position: absolute; top: -6px; right: -4px; font-size: .7rem; color: var(--flag); }
+.cell.marked::before { content: "✔"; position: absolute; bottom: -6px; left: -4px; font-size: .7rem; color: var(--ok); }
+.legend i.cell.marked::before { font-size: .6rem; }
 .cell.current { outline: 2px solid var(--primary); outline-offset: 1px; font-weight: 700; }
 .legend { list-style: none; padding: 0; margin: 12px 0 0; font-size: .8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .legend li { display: flex; align-items: center; gap: 4px; }
@@ -233,6 +256,12 @@ b.ng { color: var(--ng); }
 .filter { font-size: .85rem; font-weight: 400; margin-left: 10px; cursor: pointer; }
 .answers { display: flex; flex-direction: column; gap: 8px; }
 .answers.only-wrong .ans.ok { display: none; }
+.answers.only-marked .ans:not(.marked) { display: none; }
+.ans.marked { border-color: var(--ok); border-width: 2px; }
+.markbadge { display: inline-block; font-size: .78rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--ok-weak); color: var(--ok); border: 1px solid var(--ok); }
+.marked-sum { margin: 14px 0 0; }
+.start-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.linkbtn { font: inherit; background: none; border: 0; padding: 0; color: var(--primary); text-decoration: underline; cursor: pointer; }
 .ans { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
 .ans summary { cursor: pointer; }
 .ans .mark { font-weight: 800; }
@@ -287,8 +316,14 @@ b.ng { color: var(--ng); }
   .topbar { flex-wrap: wrap; }
   .topbar-right { flex-wrap: wrap; gap: 6px; }
   .topbar-right .btn { padding: 6px 10px; }
-  .cbt-foot { gap: 6px; padding: 8px 10px; }
-  .cbt-foot .btn { min-width: 0; flex: 1; padding: 8px 6px; }
-  .cbt-foot .btn.flag { padding: 8px 6px; }
+  body.in-cbt main { margin: 0 auto; }
+  body.in-cbt .qpane { padding: 16px; }
+  .qactions, .qa-left, .qa-right { gap: 6px; }
+  .qa-left, .qa-right { flex: 1 1 100%; }
+  .qactions .btn { min-width: 0; flex: 1; padding: 8px 6px; }
+  .qactions .btn.flag { padding: 8px 6px; }
+  .choices { grid-template-columns: 1fr; }
+  .answer-pad { position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  .choice { width: 48px; height: 48px; }
   .calc { right: 10px; }
 }
