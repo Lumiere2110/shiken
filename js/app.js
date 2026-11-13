@@ -272,12 +272,14 @@
     if (session.limit) {
       const left = session.limit - elapsed;
       if (el) {
-        el.textContent = "残り " + fmtTime(left);
+        // 「残り時間 100:20」のように 分:秒 で表示
+        const sec = Math.max(0, Math.floor(left));
+        el.textContent = "残り時間 " + Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
         el.classList.toggle("warn", left <= 60);
       }
       if (left <= 0) { finishExam(true); }
     } else if (el) {
-      el.textContent = "経過 " + fmtTime(elapsed);
+      el.textContent = "経過時間 " + fmtTime(elapsed);
     }
   }
 
@@ -290,7 +292,7 @@
 
     const answeredCount = s.answers.filter(function (a) { return a.length; }).length;
     topbarRight.innerHTML = '<span class="timer" id="timer"></span>' +
-      '<button class="btn danger" id="finishBtn">試験を終了</button>';
+      '<button class="btn danger" id="finishBtn">終了</button>';
 
     // 選択肢: 左に文字、右に解答ボタン
     function stateCls(orig) {
@@ -305,12 +307,14 @@
     const choicesHtml =
       '<ol class="choice-list">' + item.order.map(function (orig, k) {
         return '<li class="ctext' + stateCls(orig) + '"><span class="lbl">' + LABELS[k] + '</span><span class="txt">' + nl2br(q.choices[orig]) + "</span></li>";
-      }).join("") + "</ol>" +
-      '<div class="answer-pad" role="group" aria-label="解答"><div class="pad-title">解答' + (multi ? "<small>（複数）</small>" : "") + "</div>" +
+      }).join("") + "</ol>";
+    // 問題枠の右に置く「選択肢」パネル
+    const padHtml =
+      '<aside class="answer-pad" role="group" aria-label="選択肢"><div class="pad-title">選択肢' + (multi ? "<small>（複数選択）</small>" : "") + "</div>" +
       item.order.map(function (orig, k) {
         return '<button class="choice' + stateCls(orig) + '" data-orig="' + orig + '"' + (showResult ? " disabled" : "") +
           ' aria-pressed="' + (sel.indexOf(orig) >= 0) + '">' + LABELS[k] + "</button>";
-      }).join("") + "</div>";
+      }).join("") + "</aside>";
 
     let feedback = "";
     if (showResult) {
@@ -335,15 +339,16 @@
       '<div class="choices">' + choicesHtml + "</div>" +
       feedback +
       "</section>" +
-      // 問題のすぐ下: 左に「問題一覧」「電卓」、右に「後で見直す」「前へ」「次へ」
+      padHtml +
+      // 問題枠の下: 左に「問題一覧」「電卓」、右に「後で見直す」「前へ」。「次へ」は選択肢パネルの下
       '<div class="qactions"><div class="qa-left">' +
       '<button class="btn" id="listBtn">問題一覧 <small>' + answeredCount + "/" + s.items.length + "</small></button>" +
       '<button class="btn" id="calcBtn">電卓</button></div><div class="qa-right">' +
       (s.opts.practice && !s.checked[i] ? '<button class="btn primary" id="checkBtn"' + (sel.length ? "" : " disabled") + ">解答を確認</button>" : "") +
       '<button class="btn flag' + (s.flags[i] ? " on" : "") + '" id="flagBtn">' + (s.flags[i] ? "★ 見直し中" : "☆ 後で見直す") + "</button>" +
-      '<button class="btn" id="prevBtn"' + (i === 0 ? " disabled" : "") + ">‹ 前へ</button>" +
-      '<button class="btn primary" id="nextBtn"' + (i === s.items.length - 1 ? " disabled" : "") + ">次へ ›</button>" +
-      "</div></div></div>";
+      '<button class="btn" id="prevBtn"' + (i === 0 ? " disabled" : "") + ">‹ 前へ</button></div></div>" +
+      '<div class="qa-next"><button class="btn primary" id="nextBtn"' + (i === s.items.length - 1 ? " disabled" : "") + ">次へ ›</button></div>" +
+      "</div>";
 
     app.querySelectorAll(".choice").forEach(function (b) {
       b.onclick = function () {
