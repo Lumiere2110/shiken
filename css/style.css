@@ -120,7 +120,7 @@ h2 { font-size: 1.1rem; margin: 28px 0 10px; }
    上部に残り時間・終了、中央に問題枠と右側の選択肢パネル、その下に操作ボタン */
 body.in-cbt { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 body.in-cbt .topbar { position: static; flex: none; padding: 14px 24px; }
-body.in-cbt main { flex: 1; min-height: 0; width: 100%; max-width: 1500px; margin: 0 auto; padding: 24px clamp(16px, 6vw, 120px) 16px clamp(16px, 9vw, 200px); }
+body.in-cbt main { flex: 1; min-height: 0; width: 100%; max-width: 2000px; margin: 0 auto; padding: 20px clamp(16px, 2.5vw, 60px) 16px clamp(16px, 4vw, 90px); }
 body.in-cbt .timer { font-size: 1.2rem; padding: 8px 22px; border-radius: 14px; border: 2px solid var(--line); }
 body.in-cbt #finishBtn { padding: 8px 20px; font-size: 1.05rem; }
 .cbt {
@@ -128,7 +128,7 @@ body.in-cbt #finishBtn { padding: 8px 20px; font-size: 1.05rem; }
   grid-template-columns: minmax(0, 1fr) 200px;
   grid-template-rows: minmax(0, 1fr) auto;
   grid-template-areas: "q pad" "acts next";
-  column-gap: clamp(20px, 5vw, 90px); row-gap: 14px;
+  column-gap: clamp(16px, 2.5vw, 48px); row-gap: 14px;
 }
 .cbt .qpane { grid-area: q; overflow-y: auto; border-width: 2px; }
 .cbt .answer-pad { grid-area: pad; }
